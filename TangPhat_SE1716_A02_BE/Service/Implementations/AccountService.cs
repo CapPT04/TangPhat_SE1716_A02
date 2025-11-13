@@ -7,35 +7,35 @@ namespace Service.Implementations
 {
     public class AccountService : IAccountService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISystemAccountRepository _accountRepo;
 
-        public AccountService(IUnitOfWork unitOfWork)
+        public AccountService(ISystemAccountRepository accountRepo)
         {
-            _unitOfWork = unitOfWork;
+            _accountRepo = accountRepo;
         }
 
         public async Task<IEnumerable<AccountResponse>> GetAllAccountsAsync()
         {
-            var accounts = await _unitOfWork.SystemAccounts.GetAllAsync();
+            var accounts = await _accountRepo.GetAllAsync();
             return accounts.Select(MapToResponse);
         }
 
         public async Task<AccountResponse?> GetAccountByIdAsync(int id)
         {
-            var account = await _unitOfWork.SystemAccounts.GetByIdAsync(id);
+            var account = await _accountRepo.GetByIdAsync(id);
             return account == null ? null : MapToResponse(account);
         }
 
         public async Task<IEnumerable<AccountResponse>> SearchAccountsAsync(string? searchTerm)
         {
-            var accounts = await _unitOfWork.SystemAccounts.SearchAccountsAsync(searchTerm);
+            var accounts = await _accountRepo.SearchAccountsAsync(searchTerm);
             return accounts.Select(MapToResponse);
         }
 
         public async Task<AccountResponse> CreateAccountAsync(AccountRequest request)
         {
             // Check if email already exists
-            var existingAccount = await _unitOfWork.SystemAccounts.GetByEmailAsync(request.AccountEmail);
+            var existingAccount = await _accountRepo.GetByEmailAsync(request.AccountEmail);
             if (existingAccount != null)
             {
                 throw new InvalidOperationException("An account with this email already exists.");
@@ -50,15 +50,15 @@ namespace Service.Implementations
                 IsActive = request.IsActive
             };
 
-            await _unitOfWork.SystemAccounts.AddAsync(account);
-            await _unitOfWork.SaveChangesAsync();
+            await _accountRepo.AddAsync(account);
+            await _accountRepo.SaveChangesAsync();
             
             return MapToResponse(account);
         }
 
         public async Task<AccountResponse> UpdateAccountAsync(int id, AccountUpdateRequest request)
         {
-            var account = await _unitOfWork.SystemAccounts.GetByIdAsync(id);
+            var account = await _accountRepo.GetByIdAsync(id);
             if (account == null)
             {
                 throw new KeyNotFoundException("Account not found.");
@@ -73,36 +73,36 @@ namespace Service.Implementations
                 account.AccountPassword = request.AccountPassword;
             }
 
-            await _unitOfWork.SystemAccounts.UpdateAsync(account);
-            await _unitOfWork.SaveChangesAsync();
+            await _accountRepo.UpdateAsync(account);
+            await _accountRepo.SaveChangesAsync();
             
             return MapToResponse(account);
         }
 
         public async Task<bool> DeleteAccountAsync(int id)
         {
-            var account = await _unitOfWork.SystemAccounts.GetByIdAsync(id);
+            var account = await _accountRepo.GetByIdAsync(id);
             if (account == null)
             {
                 return false;
             }
 
             // Check if account has created any news articles
-            var hasNews = await _unitOfWork.SystemAccounts.HasCreatedNewsArticlesAsync(id);
+            var hasNews = await _accountRepo.HasCreatedNewsArticlesAsync(id);
             if (hasNews)
             {
                 throw new InvalidOperationException("Cannot delete account that has created news articles.");
             }
 
-            await _unitOfWork.SystemAccounts.DeleteAsync(account);
-            await _unitOfWork.SaveChangesAsync();
+            await _accountRepo.DeleteAsync(account);
+            await _accountRepo.SaveChangesAsync();
             
             return true;
         }
 
         public async Task<AccountResponse> UpdateProfileAsync(int accountId, ProfileUpdateRequest request)
         {
-            var account = await _unitOfWork.SystemAccounts.GetByIdAsync(accountId);
+            var account = await _accountRepo.GetByIdAsync(accountId);
             if (account == null)
             {
                 throw new KeyNotFoundException("Account not found.");
@@ -115,8 +115,8 @@ namespace Service.Implementations
                 account.AccountPassword = request.AccountPassword;
             }
 
-            await _unitOfWork.SystemAccounts.UpdateAsync(account);
-            await _unitOfWork.SaveChangesAsync();
+            await _accountRepo.UpdateAsync(account);
+            await _accountRepo.SaveChangesAsync();
             
             return MapToResponse(account);
         }

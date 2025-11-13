@@ -26,7 +26,7 @@ const AccountListPage = () => {
     try {
       setLoading(true);
       const data = await accountService.getAll();
-      setAccounts(data);
+      setAccounts(data.sort((a, b) => b.accountId - a.accountId));
     } catch (error: any) {
       toastError(error.response?.data?.message || 'Failed to load accounts');
     } finally {
@@ -44,7 +44,7 @@ const AccountListPage = () => {
     try {
       setLoading(true);
       const data = await accountService.search(searchTerm);
-      setAccounts(data);
+      setAccounts(data.sort((a, b) => b.accountId - a.accountId));
     } catch (error: any) {
       toastError(error.response?.data?.message || 'Search failed');
     } finally {

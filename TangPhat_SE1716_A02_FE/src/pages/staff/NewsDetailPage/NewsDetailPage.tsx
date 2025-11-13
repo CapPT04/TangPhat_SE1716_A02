@@ -96,12 +96,12 @@ const NewsDetailPage = () => {
                 {news.newsStatus ? (
                   <>
                     <CheckCircle className="w-4 h-4" />
-                    Published
+                    Active
                   </>
                 ) : (
                   <>
                     <XCircle className="w-4 h-4" />
-                    Draft
+                    Inactive
                   </>
                 )}
               </span>

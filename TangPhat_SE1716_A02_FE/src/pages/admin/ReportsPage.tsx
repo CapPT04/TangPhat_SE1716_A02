@@ -20,8 +20,8 @@ import { Category } from '@/types/category.types';
 interface ReportData {
   counts: {
     totalArticles: number;
-    publishedArticles: number;
-    draftArticles: number;
+    activeArticles: number;
+    inactiveArticles: number;
     totalAuthors: number;
     totalUsers: number;
     totalCategories: number;
@@ -36,14 +36,12 @@ const ReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<ReportData | null>(null);
   
-  // Date range state - default to last 30 days
+  // Date range state - default from Nov 7 to Nov 12
   const [startDate, setStartDate] = useState(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return '2025-11-07';
   });
   const [endDate, setEndDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
+    return '2025-11-12';
   });
 
   const loadReport = async () => {
@@ -306,15 +304,15 @@ const ReportsPage: React.FC = () => {
               />
               <StatCard
                 icon={<CheckCircle className="w-8 h-8" />}
-                title="Published"
-                value={report.counts.publishedArticles}
+                title="Active"
+                value={report.counts.activeArticles}
                 color="from-green-500 to-emerald-500"
                 delay={0.3}
               />
               <StatCard
                 icon={<FileEdit className="w-8 h-8" />}
-                title="Drafts"
-                value={report.counts.draftArticles}
+                title="Inactive"
+                value={report.counts.inactiveArticles}
                 color="from-orange-500 to-red-500"
                 delay={0.4}
               />
@@ -485,8 +483,8 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color, delay, small }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
     className="bg-white/10 backdrop-blur-xl rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all hover:scale-105"
   >
@@ -496,7 +494,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color, delay, s
       </div>
     </div>
     <p className="text-slate-300 text-sm mb-1">{title}</p>
-    <p className={`text-white font-bold ${small ? 'text-2xl' : 'text-3xl'}`}>{value.toLocaleString()}</p>
+    <p className={`text-white font-bold ${small ? 'text-2xl' : 'text-3xl'}`}>{(value ?? 0).toLocaleString()}</p>
   </motion.div>
 );
 

@@ -6,7 +6,8 @@ import StaffLayout from '@/components/layout/StaffLayout';
 import LecturerLayout from '@/components/layout/LecturerLayout';
 
 // Lazy load pages
-const HomePage = lazy(() => import('@/pages/HomePage').then(m => ({ default: m.HomePage })));
+const PublicNewsPage = lazy(() => import('@/pages/PublicNewsPage').then(m => ({ default: m.PublicNewsPage })));
+const PublicNewsDetailPage = lazy(() => import('@/pages/PublicNewsDetailPage').then(m => ({ default: m.PublicNewsDetailPage })));
 const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const AccountListPage = lazy(() => import('@/pages/admin/AccountListPage'));
 const ReportsPage = lazy(() => import('@/pages/admin/ReportsPage'));
@@ -138,17 +139,9 @@ function App() {
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<PublicNewsPage />} />
+          <Route path="/news/:id" element={<PublicNewsDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
-          
-          {/* Protected Routes */}
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            } 
-          />
 
           {/* Admin Routes */}
           <Route

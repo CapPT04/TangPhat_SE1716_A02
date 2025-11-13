@@ -26,7 +26,7 @@ const TagListPage = () => {
     try {
       setLoading(true);
       const data = await tagService.getAll();
-      setTags(data);
+      setTags(data.sort((a, b) => b.tagId - a.tagId));
     } catch (error: any) {
       toastError(error.response?.data?.message || 'Failed to load tags');
     } finally {
@@ -44,7 +44,7 @@ const TagListPage = () => {
     try {
       setLoading(true);
       const data = await tagService.search(searchTerm);
-      setTags(data);
+      setTags(data.sort((a, b) => b.tagId - a.tagId));
     } catch (error: any) {
       toastError(error.response?.data?.message || 'Search failed');
     } finally {

@@ -94,8 +94,10 @@ const NewsHistoryPage = () => {
 
     try {
       await newsService.delete(selectedNews.newsArticleId);
-      toastSuccess('News article deleted successfully!');
-      loadData();
+      setIsConfirmDialogOpen(false);
+      setSelectedNews(null);
+      toastSuccess('News article set to inactive successfully!');
+      await loadData();
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to delete news article';
       toastError(errorMessage);
@@ -272,7 +274,7 @@ const NewsHistoryPage = () => {
                             : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                         }`}>
                           {news.newsStatus ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                          {news.newsStatus ? 'Published' : 'Draft'}
+                          {news.newsStatus ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -322,14 +324,14 @@ const NewsHistoryPage = () => {
           tags={tags}
         />
 
-        {/* Confirm Delete Dialog */}
+        {/* Confirm Set Inactive Dialog */}
         <ConfirmDialog
           isOpen={isConfirmDialogOpen}
           onClose={() => setIsConfirmDialogOpen(false)}
           onConfirm={handleConfirmDelete}
-          title="Delete News Article"
-          message={`Are you sure you want to delete "${selectedNews?.newsTitle}"? This action cannot be undone.`}
-          confirmText="Delete"
+          title="Set News Article to Inactive"
+          message={`Are you sure you want to set "${selectedNews?.newsTitle}" to inactive? This will hide it from public view.`}
+          confirmText="Set Inactive"
           cancelText="Cancel"
           type="danger"
         />

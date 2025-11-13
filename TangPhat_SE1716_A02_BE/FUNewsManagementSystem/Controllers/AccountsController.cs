@@ -125,7 +125,7 @@ namespace FUNewsManagementSystem.Controllers
         }
 
         /// <summary>
-        /// Update own profile (Admin and Staff)
+        /// Update own profile 
         /// </summary>
         [HttpPut("profile")]
         public async Task<ActionResult<ApiResponse<AccountResponse>>> UpdateProfile([FromBody] ProfileUpdateRequest request)

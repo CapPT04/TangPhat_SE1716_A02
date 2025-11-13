@@ -7,29 +7,29 @@ namespace Service.Implementations
 {
     public class TagService : ITagService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ITagRepository _tagRepo;
 
-        public TagService(IUnitOfWork unitOfWork)
+        public TagService(ITagRepository tagRepo)
         {
-            _unitOfWork = unitOfWork;
+            _tagRepo = tagRepo;
         }
 
         public async Task<IEnumerable<TagResponse>> GetAllTagsAsync()
         {
-            var tags = await _unitOfWork.Tags.GetAllAsync();
+            var tags = await _tagRepo.GetAllAsync();
             return tags.Select(MapToResponse);
         }
 
         public async Task<TagResponse?> GetTagByIdAsync(int id)
         {
-            var tag = await _unitOfWork.Tags.GetByIdAsync(id);
+            var tag = await _tagRepo.GetByIdAsync(id);
             return tag == null ? null : MapToResponse(tag);
         }
 
         public async Task<TagResponse> CreateTagAsync(TagRequest request)
         {
             // Check if tag name already exists
-            var existingTag = await _unitOfWork.Tags.GetByNameAsync(request.TagName);
+            var existingTag = await _tagRepo.GetByNameAsync(request.TagName);
             if (existingTag != null)
             {
                 throw new InvalidOperationException("A tag with this name already exists.");
@@ -41,22 +41,22 @@ namespace Service.Implementations
                 Note = request.Note
             };
 
-            await _unitOfWork.Tags.AddAsync(tag);
-            await _unitOfWork.SaveChangesAsync();
+            await _tagRepo.AddAsync(tag);
+            await _tagRepo.SaveChangesAsync();
             
             return MapToResponse(tag);
         }
 
         public async Task<TagResponse> UpdateTagAsync(int id, TagRequest request)
         {
-            var tag = await _unitOfWork.Tags.GetByIdAsync(id);
+            var tag = await _tagRepo.GetByIdAsync(id);
             if (tag == null)
             {
                 throw new KeyNotFoundException("Tag not found.");
             }
 
             // Check if new tag name already exists (excluding current tag)
-            var existingTag = await _unitOfWork.Tags.GetByNameAsync(request.TagName);
+            var existingTag = await _tagRepo.GetByNameAsync(request.TagName);
             if (existingTag != null && existingTag.TagId != id)
             {
                 throw new InvalidOperationException("A tag with this name already exists.");
@@ -65,22 +65,29 @@ namespace Service.Implementations
             tag.TagName = request.TagName;
             tag.Note = request.Note;
 
-            await _unitOfWork.Tags.UpdateAsync(tag);
-            await _unitOfWork.SaveChangesAsync();
+            await _tagRepo.UpdateAsync(tag);
+            await _tagRepo.SaveChangesAsync();
             
             return MapToResponse(tag);
         }
 
         public async Task<bool> DeleteTagAsync(int id)
         {
-            var tag = await _unitOfWork.Tags.GetByIdAsync(id);
+            var tag = await _tagRepo.GetByIdAsync(id);
             if (tag == null)
             {
                 return false;
             }
 
-            await _unitOfWork.Tags.DeleteAsync(tag);
-            await _unitOfWork.SaveChangesAsync();
+            // Check if tag is being used by any news articles
+            var isUsed = await _tagRepo.IsTagUsedAsync(id);
+            if (isUsed)
+            {
+                throw new InvalidOperationException("Cannot delete tag because it is being used by one or more news articles.");
+            }
+
+            await _tagRepo.DeleteAsync(tag);
+            await _tagRepo.SaveChangesAsync();
             
             return true;
         }

@@ -12,6 +12,11 @@ export const newsService = {
     return await apiClient.get<NewsArticle[]>('/News/active');
   },
 
+  // Get active news article by ID (Public - No authentication required)
+  getActiveById: async (id: number): Promise<NewsArticle> => {
+    return await apiClient.get<NewsArticle>(`/News/active/${id}`);
+  },
+
   // Get news by current user (Staff only)
   getMyNews: async (): Promise<NewsArticle[]> => {
     return await apiClient.get<NewsArticle[]>('/News/my-news');

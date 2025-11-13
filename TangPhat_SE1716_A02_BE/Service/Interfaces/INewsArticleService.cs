@@ -16,8 +16,8 @@ namespace Service.Interfaces
 
         // Report methods - using existing DTOs
         Task<int> GetTotalArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null);
-        Task<int> GetPublishedArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null);
-        Task<int> GetDraftArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null);
+        Task<int> GetActiveArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null);
+        Task<int> GetInactiveArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<int> GetTotalAuthorsCountAsync(DateTime? startDate = null, DateTime? endDate = null);
     }
 }

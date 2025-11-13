@@ -21,7 +21,7 @@ namespace FUNewsManagementSystem.Controllers
         /// Get all tags (Staff only)
         /// </summary>
         [HttpGet]
-         [Authorize(Roles = "1,2")]
+         [Authorize(Roles = "1,2,3")]
         public async Task<ActionResult<ApiResponse<IEnumerable<TagResponse>>>> GetAll()
         {
             var tags = await _tagService.GetAllTagsAsync();
@@ -101,12 +101,19 @@ namespace FUNewsManagementSystem.Controllers
          [Authorize(Roles = "1,2")]
         public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
         {
-            var result = await _tagService.DeleteTagAsync(id);
-            if (!result)
+            try
             {
-                return NotFound(ApiResponse<object>.Fail("Tag not found.", 404));
+                var result = await _tagService.DeleteTagAsync(id);
+                if (!result)
+                {
+                    return NotFound(ApiResponse<object>.Fail("Tag not found.", 404));
+                }
+                return Ok(ApiResponse<object>.Succeed(new { }, "Tag deleted successfully.", 200));
             }
-            return Ok(ApiResponse<object>.Succeed(new { }, "Tag deleted successfully.", 200));
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ApiResponse<object>.Fail(ex.Message, 400));
+            }
         }
 
         /// <summary>

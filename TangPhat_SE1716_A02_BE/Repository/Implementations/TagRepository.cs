@@ -19,5 +19,10 @@ namespace Repository.Implementations
         {
             return await _dbSet.FirstOrDefaultAsync(t => t.TagName == tagName);
         }
+
+        public async Task<bool> IsTagUsedAsync(int tagId)
+        {
+            return await _context.NewsArticles.AnyAsync(n => n.Tags.Any(t => t.TagId == tagId));
+        }
     }
 }

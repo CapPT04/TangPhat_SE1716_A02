@@ -63,5 +63,10 @@ namespace Repository.Implementations
         {
             return await _dbSet.CountAsync(predicate);
         }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

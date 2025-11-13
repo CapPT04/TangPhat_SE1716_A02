@@ -346,7 +346,7 @@ const NewsArticleFormModal = ({
                     />
                     <label htmlFor="newsStatus" className="text-sm font-medium text-blue-200 cursor-pointer flex items-center gap-2">
                       <ToggleLeft className="w-4 h-4" />
-                      Publish this article (Active status)
+                      Set as Active (Visible to public)
                     </label>
                   </div>
                 </div>

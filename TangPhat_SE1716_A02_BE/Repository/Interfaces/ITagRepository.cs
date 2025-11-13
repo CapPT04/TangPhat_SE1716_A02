@@ -6,5 +6,6 @@ namespace Repository.Interfaces
     {
         Task<IEnumerable<Tag>> GetByIdsAsync(List<int> ids);
         Task<Tag?> GetByNameAsync(string tagName);
+        Task<bool> IsTagUsedAsync(int tagId);
     }
 }

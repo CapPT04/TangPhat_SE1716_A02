@@ -26,7 +26,7 @@ const CategoryListPage = () => {
     try {
       setLoading(true);
       const data = await categoryService.getAll();
-      setCategories(data);
+      setCategories(data.sort((a, b) => b.categoryId - a.categoryId));
     } catch (error: any) {
       toastError(error.response?.data?.message || 'Failed to load categories');
     } finally {
@@ -44,7 +44,7 @@ const CategoryListPage = () => {
     try {
       setLoading(true);
       const data = await categoryService.search(searchTerm);
-      setCategories(data);
+      setCategories(data.sort((a, b) => b.categoryId - a.categoryId));
     } catch (error: any) {
       toastError(error.response?.data?.message || 'Search failed');
     } finally {

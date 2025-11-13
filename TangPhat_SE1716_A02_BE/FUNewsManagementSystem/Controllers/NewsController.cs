@@ -9,7 +9,6 @@ namespace FUNewsManagementSystem.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "1,2,3")] 
     public class NewsController : ControllerBase
     {
         private readonly INewsArticleService _newsService;
@@ -20,14 +19,29 @@ namespace FUNewsManagementSystem.Controllers
         }
 
         /// <summary>
-        /// Get active news articles (Staff and Lecturer)
+        /// Get active news articles (Public - No authentication required)
         /// </summary>
         [HttpGet("active")]
-        [Authorize(Roles = "1,2")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<IEnumerable<NewsArticleResponse>>>> GetActiveNews()
         {
             var news = await _newsService.GetActiveNewsAsync();
             return Ok(ApiResponse<IEnumerable<NewsArticleResponse>>.Succeed(news, "Get active news successfully.", 200));
+        }
+
+        /// <summary>
+        /// Get active news article by ID (Public - No authentication required)
+        /// </summary>
+        [HttpGet("active/{id}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<NewsArticleResponse>>> GetActiveNewsById(int id)
+        {
+            var news = await _newsService.GetNewsByIdAsync(id);
+            if (news == null || !news.NewsStatus)
+            {
+                return NotFound(ApiResponse<NewsArticleResponse>.Fail("News article not found.", 404));
+            }
+            return Ok(ApiResponse<NewsArticleResponse>.Succeed(news, "Get news successfully.", 200));
         }
 
         /// <summary>
@@ -49,7 +63,7 @@ namespace FUNewsManagementSystem.Controllers
         /// Get all news articles (Staff)
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "1")]
+        [Authorize(Roles = "1,3")]
         public async Task<ActionResult<ApiResponse<IEnumerable<NewsArticleResponse>>>> GetAll()
         {
             var news = await _newsService.GetAllNewsAsync();
@@ -60,7 +74,7 @@ namespace FUNewsManagementSystem.Controllers
         /// Search news articles (Staff and Lecturer)
         /// </summary>
         [HttpGet("search")]
-        [Authorize(Roles = "1,2")]
+        // [Authorize(Roles = "1,2")]
         public async Task<ActionResult<ApiResponse<IEnumerable<NewsArticleResponse>>>> Search([FromQuery] string? searchTerm)
         {
             var news = await _newsService.SearchNewsAsync(searchTerm);
@@ -152,25 +166,6 @@ namespace FUNewsManagementSystem.Controllers
         }
 
         // ========== ADMIN REPORTS ==========
-
-        /// <summary>
-        /// Get news statistics by date range (Admin only)
-        /// </summary>
-        [HttpGet("statistics")]
-        [Authorize(Roles = "3")]
-        public async Task<ActionResult<ApiResponse<IEnumerable<NewsArticleStatistic>>>> GetStatistics(
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate)
-        {
-            if (startDate > endDate)
-            {
-                return BadRequest(ApiResponse<IEnumerable<NewsArticleStatistic>>.Fail("Start date must be before end date.", 400));
-            }
-
-            var statistics = await _newsService.GetNewsStatisticsByDateRangeAsync(startDate, endDate);
-            return Ok(ApiResponse<IEnumerable<NewsArticleStatistic>>.Succeed(statistics, "Statistics retrieved successfully.", 200));
-        }
-
         /// <summary>
         /// Get article counts for dashboard (Admin only)
         /// </summary>
@@ -180,7 +175,6 @@ namespace FUNewsManagementSystem.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            // Debug: Log user claims
             var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             Console.WriteLine($"[DEBUG] GetCounts - UserId: {userId}, Role: {userRole}, IsAuthenticated: {User.Identity?.IsAuthenticated}");
@@ -191,15 +185,15 @@ namespace FUNewsManagementSystem.Controllers
             }
 
             var totalArticles = await _newsService.GetTotalArticlesCountAsync(startDate, endDate);
-            var publishedArticles = await _newsService.GetPublishedArticlesCountAsync(startDate, endDate);
-            var draftArticles = await _newsService.GetDraftArticlesCountAsync(startDate, endDate);
+            var activeArticles = await _newsService.GetActiveArticlesCountAsync(startDate, endDate);
+            var inactiveArticles = await _newsService.GetInactiveArticlesCountAsync(startDate, endDate);
             var totalAuthors = await _newsService.GetTotalAuthorsCountAsync(startDate, endDate);
 
             var result = new
             {
                 totalArticles,
-                publishedArticles,
-                draftArticles,
+                activeArticles,
+                inactiveArticles,
                 totalAuthors
             };
 

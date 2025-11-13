@@ -94,5 +94,16 @@ namespace Repository.Implementations
                 }
             }
         }
+
+        public async Task<IEnumerable<NewsArticle>> GetAllWithDetailsAsync()
+        {
+            return await _dbSet
+                .Include(n => n.Category)
+                .Include(n => n.CreatedBy)
+                .Include(n => n.UpdatedBy)
+                .Include(n => n.Tags)
+                .OrderByDescending(n => n.CreatedDate)
+                .ToListAsync();
+        }
     }
 }

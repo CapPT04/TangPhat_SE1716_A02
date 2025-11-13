@@ -7,7 +7,8 @@ import {
   LogOut, 
   Menu, 
   X,
-  ChevronRight
+  ChevronRight,
+  Home
 } from 'lucide-react';
 import { useLogout } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,6 +98,13 @@ const LecturerLayout: React.FC = () => {
                   </p>
                 </div>
               </div>
+              <Link
+                to="/"
+                className="w-full flex items-center gap-2 px-4 py-2 mb-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                <span className="text-sm font-medium">Xem tin tức</span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"

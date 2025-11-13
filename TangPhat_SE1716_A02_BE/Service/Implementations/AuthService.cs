@@ -7,13 +7,13 @@ namespace Service.Implementations
 {
     public class AuthService : IAuthService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ISystemAccountRepository _accountRepo;
         private readonly IJWTService _jwtService;
         private readonly IConfiguration _configuration;
 
-        public AuthService(IUnitOfWork unitOfWork, IJWTService jwtService, IConfiguration configuration)
+        public AuthService(ISystemAccountRepository accountRepo, IJWTService jwtService, IConfiguration configuration)
         {
-            _unitOfWork = unitOfWork;
+            _accountRepo = accountRepo;
             _jwtService = jwtService;
             _configuration = configuration;
         }
@@ -49,7 +49,7 @@ namespace Service.Implementations
             }
 
             // Check regular accounts from database
-            var account = await _unitOfWork.SystemAccounts.GetByEmailAsync(request.Email);
+            var account = await _accountRepo.GetByEmailAsync(request.Email);
 
             if (account == null || account.AccountPassword != request.Password || !account.IsActive)
             {

@@ -26,8 +26,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.AddDbContext<FunewsManagementSystemContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register Unit of Work
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+// Register Repositories
+builder.Services.AddScoped<INewsArticleRepository, NewsArticleRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<ISystemAccountRepository, SystemAccountRepository>();
 
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();

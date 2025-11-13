@@ -4,6 +4,7 @@ namespace Repository.Interfaces
 {
     public interface INewsArticleRepository : IGenericRepository<NewsArticle>
     {
+        Task<IEnumerable<NewsArticle>> GetAllWithDetailsAsync();
         Task<IEnumerable<NewsArticle>> GetActiveNewsAsync();
         Task<NewsArticle?> GetByIdWithDetailsAsync(int id);
         Task<IEnumerable<NewsArticle>> GetByCreatorAsync(int creatorId);

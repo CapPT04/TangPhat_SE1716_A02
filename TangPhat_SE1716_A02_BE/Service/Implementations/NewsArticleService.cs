@@ -7,46 +7,49 @@ namespace Service.Implementations
 {
     public class NewsArticleService : INewsArticleService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly INewsArticleRepository _newsRepo;
+        private readonly ITagRepository _tagRepo;
 
-        public NewsArticleService(IUnitOfWork unitOfWork)
+        public NewsArticleService(INewsArticleRepository newsRepo, ITagRepository tagRepo)
         {
-            _unitOfWork = unitOfWork;
+            _newsRepo = newsRepo;
+            _tagRepo = tagRepo;
         }
 
         public async Task<IEnumerable<NewsArticleResponse>> GetAllNewsAsync()
         {
-            var news = await _unitOfWork.NewsArticles.SearchNewsAsync(null);
+            var news = await _newsRepo.GetAllWithDetailsAsync();
             return news.Select(MapToResponse);
         }
 
         public async Task<IEnumerable<NewsArticleResponse>> GetActiveNewsAsync()
         {
-            var news = await _unitOfWork.NewsArticles.GetActiveNewsAsync();
+            var news = await _newsRepo.GetActiveNewsAsync();
             return news.Select(MapToResponse);
         }
 
         public async Task<NewsArticleResponse?> GetNewsByIdAsync(int id)
         {
-            var news = await _unitOfWork.NewsArticles.GetByIdWithDetailsAsync(id);
+            var news = await _newsRepo.GetByIdWithDetailsAsync(id);
             return news == null ? null : MapToResponse(news);
         }
 
         public async Task<IEnumerable<NewsArticleResponse>> SearchNewsAsync(string? searchTerm)
         {
-            var news = await _unitOfWork.NewsArticles.SearchNewsAsync(searchTerm);
+            var news = await _newsRepo.SearchNewsAsync(searchTerm);
             return news.Select(MapToResponse);
         }
 
         public async Task<IEnumerable<NewsArticleResponse>> GetNewsByCreatorAsync(int creatorId)
         {
-            var news = await _unitOfWork.NewsArticles.GetByCreatorAsync(creatorId);
+            var news = await _newsRepo.GetByCreatorAsync(creatorId);
             return news.Select(MapToResponse);
         }
 
         public async Task<IEnumerable<NewsArticleStatistic>> GetNewsStatisticsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            var news = await _unitOfWork.NewsArticles.GetNewsByDateRangeAsync(startDate, endDate);
+            var news = await _newsRepo.GetNewsByDateRangeAsync(startDate, endDate);
+
             return news.Select(n => new NewsArticleStatistic
             {
                 NewsArticleId = n.NewsArticleId,
@@ -72,22 +75,27 @@ namespace Service.Implementations
                 CreatedDate = DateTime.Now
             };
 
-            await _unitOfWork.NewsArticles.AddAsync(news);
-            await _unitOfWork.SaveChangesAsync();
+            await _newsRepo.AddAsync(news);
+            await _newsRepo.SaveChangesAsync();
 
-            if (request.TagIds.Any())
+            // Add tags if provided
+            if (request.TagIds != null && request.TagIds.Any())
             {
-                await _unitOfWork.NewsArticles.UpdateNewsTagsAsync(news.NewsArticleId, request.TagIds);
-                await _unitOfWork.SaveChangesAsync();
+                var tags = await _tagRepo.GetByIdsAsync(request.TagIds);
+                news.Tags = tags.ToList();
+                await _newsRepo.SaveChangesAsync();
             }
 
-            var createdNews = await _unitOfWork.NewsArticles.GetByIdWithDetailsAsync(news.NewsArticleId);
+            // Reload with includes
+            var createdNews = await _newsRepo.GetByIdWithDetailsAsync(news.NewsArticleId);
+
             return MapToResponse(createdNews!);
         }
 
         public async Task<NewsArticleResponse> UpdateNewsAsync(int id, NewsArticleUpdateRequest request, int updaterId)
         {
-            var news = await _unitOfWork.NewsArticles.GetByIdAsync(id);
+            var news = await _newsRepo.GetByIdWithDetailsAsync(id);
+
             if (news == null)
             {
                 throw new KeyNotFoundException("News article not found.");
@@ -102,24 +110,39 @@ namespace Service.Implementations
             news.UpdatedById = updaterId;
             news.ModifiedDate = DateTime.Now;
 
-            await _unitOfWork.NewsArticles.UpdateAsync(news);
-            await _unitOfWork.NewsArticles.UpdateNewsTagsAsync(id, request.TagIds);
-            await _unitOfWork.SaveChangesAsync();
+            // Update tags
+            news.Tags.Clear();
+            if (request.TagIds != null && request.TagIds.Any())
+            {
+                var tags = await _tagRepo.GetByIdsAsync(request.TagIds);
+                news.Tags = tags.ToList();
+            }
 
-            var updatedNews = await _unitOfWork.NewsArticles.GetByIdWithDetailsAsync(id);
+            await _newsRepo.UpdateAsync(news);
+            await _newsRepo.SaveChangesAsync();
+
+            // Reload with all includes
+            var updatedNews = await _newsRepo.GetByIdWithDetailsAsync(id);
+
             return MapToResponse(updatedNews!);
         }
 
         public async Task<bool> DeleteNewsAsync(int id)
         {
-            var news = await _unitOfWork.NewsArticles.GetByIdAsync(id);
+            // Get news entity for update (without includes to avoid tracking issues)
+            var news = await _newsRepo.GetByIdAsync(id);
             if (news == null)
             {
                 return false;
             }
 
-            await _unitOfWork.NewsArticles.DeleteAsync(news);
-            await _unitOfWork.SaveChangesAsync();
+            // Soft delete: Set status to inactive instead of deleting
+            news.NewsStatus = false;
+            news.ModifiedDate = DateTime.Now;
+            
+            // Update and save changes
+            await _newsRepo.UpdateAsync(news);
+            await _newsRepo.SaveChangesAsync();
             
             return true;
         }
@@ -154,35 +177,41 @@ namespace Service.Implementations
         // Report methods - simple count methods
         public async Task<int> GetTotalArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
-            var allNews = await _unitOfWork.NewsArticles.SearchNewsAsync(null);
+            var allNews = await _newsRepo.SearchNewsAsync(null);
             
             if (startDate.HasValue && endDate.HasValue)
             {
-                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endDate.Value);
+                // Set endDate to end of day (23:59:59) to include all articles created on that day
+                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endOfDay);
             }
 
             return allNews.Count();
         }
 
-        public async Task<int> GetPublishedArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<int> GetActiveArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
-            var allNews = await _unitOfWork.NewsArticles.SearchNewsAsync(null);
+            var allNews = await _newsRepo.SearchNewsAsync(null);
             
             if (startDate.HasValue && endDate.HasValue)
             {
-                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endDate.Value);
+                // Set endDate to end of day (23:59:59) to include all articles created on that day
+                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endOfDay);
             }
 
             return allNews.Count(n => n.NewsStatus);
         }
 
-        public async Task<int> GetDraftArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<int> GetInactiveArticlesCountAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
-            var allNews = await _unitOfWork.NewsArticles.SearchNewsAsync(null);
+            var allNews = await _newsRepo.SearchNewsAsync(null);
             
             if (startDate.HasValue && endDate.HasValue)
             {
-                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endDate.Value);
+                // Set endDate to end of day (23:59:59) to include all articles created on that day
+                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endOfDay);
             }
 
             return allNews.Count(n => !n.NewsStatus);
@@ -190,11 +219,13 @@ namespace Service.Implementations
 
         public async Task<int> GetTotalAuthorsCountAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
-            var allNews = await _unitOfWork.NewsArticles.SearchNewsAsync(null);
+            var allNews = await _newsRepo.SearchNewsAsync(null);
             
             if (startDate.HasValue && endDate.HasValue)
             {
-                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endDate.Value);
+                // Set endDate to end of day (23:59:59) to include all articles created on that day
+                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                allNews = allNews.Where(n => n.CreatedDate >= startDate.Value && n.CreatedDate <= endOfDay);
             }
 
             return allNews.Select(n => n.CreatedById).Distinct().Count();

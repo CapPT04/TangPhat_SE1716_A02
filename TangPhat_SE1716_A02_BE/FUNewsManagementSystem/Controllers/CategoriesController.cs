@@ -7,7 +7,6 @@ namespace FUNewsManagementSystem.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "1,2,3")]
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
@@ -31,7 +30,7 @@ namespace FUNewsManagementSystem.Controllers
         /// Get active categories (Staff only)
         /// </summary>
         [HttpGet("active")]
-    [Authorize(Roles = "1")]
+        // [Authorize(Roles = "1")]
         public async Task<ActionResult<ApiResponse<IEnumerable<CategoryResponse>>>> GetActive()
         {
             var categories = await _categoryService.GetActiveCategoriesAsync();
